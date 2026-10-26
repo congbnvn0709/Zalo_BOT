@@ -266,7 +266,7 @@ async def upload_custom_template(file: UploadFile = File(...)):
             detail="Định dạng tệp không hợp lệ. Chỉ chấp nhận tệp Excel có đuôi .xlsx",
         )
 
-    upload_dir = os.path.join(PROJECT_ROOT, "templates_excel", "uploaded")
+    upload_dir = "/tmp/uploaded" if os.environ.get("VERCEL") else os.path.join(PROJECT_ROOT, "templates_excel", "uploaded")
     os.makedirs(upload_dir, exist_ok=True)
     saved_path = os.path.join(upload_dir, f"custom_{int(time.time())}_{filename}")
 
@@ -326,7 +326,9 @@ def export_excel(payload: ExportExcelRequest):
 
     # Select template source
     template_path = None
-    if payload.use_custom_template and _CUSTOM_TEMPLATE_PATH and os.path.exists(_CUSTOM_TEMPLATE_PATH):
+    if _CUSTOM_TEMPLATE_PATH and os.path.exists(_CUSTOM_TEMPLATE_PATH):
+        template_path = _CUSTOM_TEMPLATE_PATH
+    elif payload.use_custom_template and _CUSTOM_TEMPLATE_PATH and os.path.exists(_CUSTOM_TEMPLATE_PATH):
         template_path = _CUSTOM_TEMPLATE_PATH
 
     # Prepare output path
@@ -336,7 +338,7 @@ def export_excel(payload: ExportExcelRequest):
     if not clean_fname.lower().endswith(".xlsx"):
         clean_fname += ".xlsx"
 
-    out_dir = DEFAULT_OUTPUT_DIR
+    out_dir = "/tmp/output" if os.environ.get("VERCEL") else DEFAULT_OUTPUT_DIR
     os.makedirs(out_dir, exist_ok=True)
     target_filepath = os.path.join(out_dir, f"{token}_{clean_fname}")
 

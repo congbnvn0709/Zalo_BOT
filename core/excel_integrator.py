@@ -20,7 +20,7 @@ from core.template_generator import generate_default_template, DEFAULT_TEMPLATE_
 
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DEFAULT_OUTPUT_DIR = os.path.join(PROJECT_ROOT, "output")
+DEFAULT_OUTPUT_DIR = "/tmp/output" if os.environ.get("VERCEL") else os.path.join(PROJECT_ROOT, "output")
 
 
 def strip_accents(text: str) -> str:
