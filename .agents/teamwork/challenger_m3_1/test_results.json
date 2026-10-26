@@ -1,0 +1,440 @@
+{
+  "total": 43,
+  "passed": 43,
+  "failed": 0,
+  "crashes_500": 0,
+  "elapsed_seconds": 1.3784370422363281,
+  "verdict": "APPROVE",
+  "results": [
+    {
+      "name": "100k Character Repetitive Text",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 61.9969367980957,
+      "details": "Parsed 991 records from 100k payload successfully",
+      "snippet": ""
+    },
+    {
+      "name": "100k Character Unsegmented Noise (ReDoS check)",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 14.995813369750977,
+      "details": "ReDoS survived in 15.0ms without hang",
+      "snippet": ""
+    },
+    {
+      "name": "Non-UTF8 Corrupted Binary Raw Body",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.1868476867675781,
+      "details": "Handled non-UTF8 cleanly with 400",
+      "snippet": ""
+    },
+    {
+      "name": "Null Bytes Embedded in String",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 1.764059066772461,
+      "details": "Parsed record safely with embedded nulls",
+      "snippet": ""
+    },
+    {
+      "name": "Malformed Truncated JSON Payload",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 422,
+      "is_500": false,
+      "elapsed_ms": 1.4042854309082031,
+      "details": "Rejected malformed JSON with 422",
+      "snippet": ""
+    },
+    {
+      "name": "Malformed Syntax JSON (Trailing comma / unclosed brace)",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 422,
+      "is_500": false,
+      "elapsed_ms": 1.5707015991210938,
+      "details": "Rejected with 422",
+      "snippet": ""
+    },
+    {
+      "name": "Empty String Payload {'text': ''}",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 1.4872550964355469,
+      "details": "Returned clean empty record list",
+      "snippet": ""
+    },
+    {
+      "name": "Null Values {'text': null, 'raw_text': null}",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 1.3010501861572266,
+      "details": "Gracefully treated nulls as empty text (0 records)",
+      "snippet": ""
+    },
+    {
+      "name": "Empty Object Payload {}",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 1.2369155883789062,
+      "details": "Defaulted successfully to empty text",
+      "snippet": ""
+    },
+    {
+      "name": "Type Mismatches (int for text, string for default_year)",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 422,
+      "is_500": false,
+      "elapsed_ms": 1.1699199676513672,
+      "details": "Pydantic properly rejected schema violations with 422",
+      "snippet": ""
+    },
+    {
+      "name": "Extreme Unicode (Zalgo, RTL, Emoji Bomb)",
+      "category": "/api/parse",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 1.9180774688720703,
+      "details": "Processed Unicode / Emoji bomb safely",
+      "snippet": ""
+    },
+    {
+      "name": "25 Concurrent Export Requests - Status Codes",
+      "category": "/api/export-excel",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 698.6360549926758,
+      "details": "All 25 concurrent exports succeeded with 200 OK in 698.6ms",
+      "snippet": ""
+    },
+    {
+      "name": "25 Concurrent Export Requests - Token Uniqueness",
+      "category": "/api/export-excel",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 698.6360549926758,
+      "details": "All 25 tokens are strictly unique",
+      "snippet": ""
+    },
+    {
+      "name": "25 Concurrent Workbooks - Excel File Integrity & Non-Collision",
+      "category": "/api/export-excel",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 0.0,
+      "details": "Verified all 25 workbooks via /api/download/ - openpyxl loaded each with valid formulas and fullCalcOnLoad",
+      "snippet": ""
+    },
+    {
+      "name": "Security: UNIX path traversal ../../etc/passwd",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.7919540405273438,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: URL-encoded traversal ..%2F..%2Fetc%2Fpasswd",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.378774642944336,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: Deep UNIX traversal ../../../etc/shadow",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.033782958984375,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: Windows backslash traversal",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.3880729675292969,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: Prefix spoof traversal",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.0230541229248047,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: Double-encoded dot traversal",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.1777877807617188,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: Single parent directory ..",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.0957717895507812,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: Current directory .",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.177072525024414,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: Non-existent well-formed export UUID",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.413106918334961,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: Random non-existent string token",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.1301040649414062,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: Special characters token",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.1260509490966797,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: XSS script payload token",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.024007797241211,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: SQL injection token",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 1.4221668243408203,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Security: 10,000-character token",
+      "category": "/api/download/{token}",
+      "passed": true,
+      "status_code": 404,
+      "is_500": false,
+      "elapsed_ms": 2.234935760498047,
+      "details": "Safely blocked with HTTP 404",
+      "snippet": ""
+    },
+    {
+      "name": "Upload 0-Byte File (empty.xlsx)",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 2.0186901092529297,
+      "details": "Safely rejected 0-byte upload with HTTP 400: Lỗi khi đọc file mẫu Excel: File is not a zip file",
+      "snippet": ""
+    },
+    {
+      "name": "Upload Plain Text File Renamed to .xlsx",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.363992691040039,
+      "details": "Safely caught invalid Excel format with 400: Lỗi khi đọc file mẫu Excel: File is not a zip file",
+      "snippet": ""
+    },
+    {
+      "name": "Upload Executable Binary (MZ header) Renamed to .xlsx",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.9881725311279297,
+      "details": "Safely rejected executable binary disguised as .xlsx with 400",
+      "snippet": ""
+    },
+    {
+      "name": "Upload Corrupted/Truncated ZIP Archive (.xlsx)",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.6088485717773438,
+      "details": "Safely caught BadZipFile / corrupt zip with 400: Lỗi khi đọc file mẫu Excel: File is not a zip file",
+      "snippet": ""
+    },
+    {
+      "name": "Upload Forbidden Extension (script.sh)",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.2209415435791016,
+      "details": "Rejected non-.xlsx extension with 400",
+      "snippet": ""
+    },
+    {
+      "name": "Upload Forbidden Extension (payload.exe)",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.277923583984375,
+      "details": "Rejected non-.xlsx extension with 400",
+      "snippet": ""
+    },
+    {
+      "name": "Upload Forbidden Extension (document.pdf)",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.100778579711914,
+      "details": "Rejected non-.xlsx extension with 400",
+      "snippet": ""
+    },
+    {
+      "name": "Upload Forbidden Extension (table.csv)",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.1870861053466797,
+      "details": "Rejected non-.xlsx extension with 400",
+      "snippet": ""
+    },
+    {
+      "name": "Upload Valid ZIP with Non-Excel Structure (.xlsx)",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.3089179992675781,
+      "details": "openpyxl failed to recognize invalid workbook structure, rejected with 400",
+      "snippet": ""
+    },
+    {
+      "name": "Upload Blank Excel Workbook Missing Headers",
+      "category": "/api/template/upload",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 3.2379627227783203,
+      "details": "Domain validator detected missing employee/date headers, returned 400",
+      "snippet": ""
+    },
+    {
+      "name": "Export with Empty Records List",
+      "category": "/api/export-excel",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.3260841369628906,
+      "details": "Properly rejected empty export with 400: Không có bản ghi chấm công nào để xuất Excel.",
+      "snippet": ""
+    },
+    {
+      "name": "Path Traversal in output_filename parameter",
+      "category": "/api/export-excel",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 25.513887405395508,
+      "details": "Sanitized filename to '.._.._.._outside_system.xlsx', file safely confined to output/",
+      "snippet": ""
+    },
+    {
+      "name": "Corrupt Record Types (Non-numeric hour string)",
+      "category": "/api/export-excel",
+      "passed": true,
+      "status_code": 400,
+      "is_500": false,
+      "elapsed_ms": 1.7001628875732422,
+      "details": "Pydantic caught invalid record type, returned 400",
+      "snippet": ""
+    },
+    {
+      "name": "Extreme Numeric Hours Boundary Check",
+      "category": "/api/export-excel",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 26.362895965576172,
+      "details": "Export handled large numeric hours gracefully without crash",
+      "snippet": ""
+    },
+    {
+      "name": "Unknown Employee & Out-of-Range Date Records Handling",
+      "category": "/api/export-excel",
+      "passed": true,
+      "status_code": 200,
+      "is_500": false,
+      "elapsed_ms": 26.960134506225586,
+      "details": "Completed with graceful unmatched summary: errors=1",
+      "snippet": ""
+    }
+  ]
+}

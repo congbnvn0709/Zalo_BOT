@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ Thống Bóc Tách Chấm Công Zalo & Điền Excel</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom & Offline Fallback Styles -->
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-md shadow-indigo-200">
+          Z
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">HỆ THỐNG ĐIỀU ĐỘ & CHẤM CÔNG ZALO</h1>
+          <p class="text-xs text-slate-500 font-medium">Bóc tách tin nhắn tự động & Điền bảng chấm công Excel</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full text-xs font-semibold border border-emerald-200">
+          <span class="pulse-dot"></span>
+          <span>Máy chủ sẵn sàng</span>
+        </div>
+        <a href="/docs" target="_blank" class="text-xs font-medium text-slate-600 hover:text-indigo-600 flex items-center gap-1 transition">
+          <span>Tài liệu API</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 space-y-8">
+
+    <!-- Step 1: Input & Configuration -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm">1</span>
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Dán Tin Nhắn Zalo & Chọn Mẫu Excel</h2>
+            <p class="text-xs text-slate-500">Hỗ trợ dán hàng loạt tin nhắn cùng lúc, tự nhận diện ca ngày/đêm và suất ăn</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="btn-sample" type="button" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition">
+            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+            Dán tin nhắn mẫu
+          </button>
+          <button id="btn-clear" type="button" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+            Xóa trắng
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Textarea input -->
+        <div class="lg:col-span-2 space-y-2">
+          <div class="flex justify-between items-center text-xs text-slate-500">
+            <label for="zalo-raw-text" class="font-medium text-slate-700">Khối văn bản tin nhắn Zalo:</label>
+            <span id="text-counter" class="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">0 tin nhắn nhận diện</span>
+          </div>
+          <textarea id="zalo-raw-text" rows="10" class="w-full font-mono text-xs sm:text-sm p-4 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition resize-y" placeholder="Dán danh sách tin nhắn chấm công Zalo vào đây... Ví dụ:&#10;HỌ TÊN : HOÀNG ĐẮC PHÚ&#10;NGÀY: 24/10&#10;CA : Ca ngày &#10;DỰ ÁN : sdv &#10;THỜI GIAN LÀM VIỆC :8h-17h ( 8H)&#10;CÓ ĂN Ở XƯỞNG KO : 0"></textarea>
+        </div>
+
+        <!-- Template selection & configuration -->
+        <div class="space-y-4 bg-slate-50/70 p-5 rounded-xl border border-slate-200 flex flex-col justify-between">
+          <div class="space-y-3">
+            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Cấu hình File Excel Mẫu</h3>
+            
+            <div class="space-y-2">
+              <label class="flex items-center space-x-2 text-xs font-medium text-slate-800 cursor-pointer">
+                <input type="radio" name="template-option" id="radio-default-tpl" value="default" checked class="text-indigo-600 focus:ring-indigo-500">
+                <span>File mẫu mặc định dự án</span>
+              </label>
+              <label class="flex items-center space-x-2 text-xs font-medium text-slate-800 cursor-pointer">
+                <input type="radio" name="template-option" id="radio-custom-tpl" value="custom" class="text-indigo-600 focus:ring-indigo-500">
+                <span>Tải lên file Excel mẫu (.xlsx)</span>
+              </label>
+            </div>
+
+            <!-- Upload box (hidden unless custom selected) -->
+            <div id="upload-box-wrapper" class="hidden pt-2">
+              <input type="file" id="template-upload" accept=".xlsx" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer border border-dashed border-slate-300 rounded-lg p-2 bg-white" />
+              <p id="upload-feedback" class="text-[11px] text-slate-500 mt-1"></p>
+            </div>
+
+            <!-- Active template info badge -->
+            <div id="template-info-box" class="bg-white p-3 rounded-lg border border-slate-200 text-xs space-y-1.5 shadow-xs">
+              <div class="flex justify-between items-center text-slate-600">
+                <span class="font-medium">Trang tính:</span>
+                <span id="tpl-sheet-name" class="font-semibold text-slate-800">Đang tải...</span>
+              </div>
+              <div class="flex justify-between items-center text-slate-600">
+                <span class="font-medium">Số nhân sự:</span>
+                <span id="tpl-employees-count" class="font-semibold text-slate-800">-</span>
+              </div>
+              <div class="flex justify-between items-center text-slate-600">
+                <span class="font-medium">Khoảng ngày:</span>
+                <span id="tpl-date-range" class="font-semibold text-slate-800 text-[11px]">-</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Parse button -->
+          <button id="btn-parse" type="button" class="w-full inline-flex items-center justify-center px-5 py-3 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl shadow-md shadow-indigo-200 transition">
+            <svg id="parse-spinner" class="spinner mr-2 hidden" viewBox="0 0 24 24"></svg>
+            <svg id="parse-icon" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span>Bóc tách dữ liệu</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2: Interactive Preview & Edit Table -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
+        <div class="flex items-center space-x-3">
+          <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm">2</span>
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Bảng Xem Trước & Chỉnh Sửa</h2>
+            <p class="text-xs text-slate-500">Nhấp trực tiếp vào ô để sửa nhanh, hoặc nhấn biểu tượng Sửa để xem chi tiết</p>
+          </div>
+        </div>
+
+        <!-- Filter Segmented Control & Action buttons -->
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="inline-flex rounded-lg bg-slate-100 p-1 text-xs font-medium text-slate-600" id="filter-group">
+            <button type="button" data-filter="ALL" class="px-2.5 py-1 rounded-md bg-white text-slate-900 shadow-xs font-semibold">Tất cả (<span id="count-all">0</span>)</button>
+            <button type="button" data-filter="VALID" class="px-2.5 py-1 rounded-md hover:text-slate-900">Hợp lệ (<span id="count-valid">0</span>)</button>
+            <button type="button" data-filter="WARNING" class="px-2.5 py-1 rounded-md hover:text-slate-900">Cần chú ý (<span id="count-warning">0</span>)</button>
+            <button type="button" data-filter="ERROR" class="px-2.5 py-1 rounded-md hover:text-slate-900">Lỗi (<span id="count-error">0</span>)</button>
+          </div>
+
+          <button id="btn-add-row" type="button" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            + Thêm dòng
+          </button>
+          <button id="btn-clear-table" type="button" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition">
+            Xóa bảng
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview Data Grid -->
+      <div class="overflow-x-auto border border-slate-200 rounded-xl">
+        <table id="preview-table" class="min-w-full divide-y divide-slate-200 text-xs">
+          <thead class="bg-slate-50 text-slate-700 font-semibold uppercase tracking-wider text-[11px]">
+            <tr>
+              <th scope="col" class="px-3 py-3 text-center w-12">STT</th>
+              <th scope="col" class="px-4 py-3 text-left">Họ và tên</th>
+              <th scope="col" class="px-3 py-3 text-center w-24">Ngày</th>
+              <th scope="col" class="px-3 py-3 text-center w-24">Ca</th>
+              <th scope="col" class="px-3 py-3 text-center w-20">Giờ HC</th>
+              <th scope="col" class="px-3 py-3 text-center w-24">Giờ Tăng ca</th>
+              <th scope="col" class="px-3 py-3 text-center w-20">Giờ Đêm</th>
+              <th scope="col" class="px-3 py-3 text-center w-20">Suất ăn</th>
+              <th scope="col" class="px-3 py-3 text-center w-28">Trạng thái</th>
+              <th scope="col" class="px-3 py-3 text-center w-24">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="table-body" class="bg-white divide-y divide-slate-100">
+            <!-- Empty Placeholder -->
+            <tr id="empty-row">
+              <td colspan="10" class="px-6 py-12 text-center text-slate-400">
+                <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Chưa có dữ liệu. Vui lòng dán tin nhắn Zalo ở Bước 1 và nhấn "Bóc tách dữ liệu".
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Step 3: Confirm & Excel Export -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md space-y-6">
+      <div class="flex items-center space-x-3 pb-4 border-b border-slate-100">
+        <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm">3</span>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Xác Nhận & Điền Vào File Excel</h2>
+          <p class="text-xs text-slate-500">Tự động điền chính xác vào cột ngày, giữ nguyên 100% công thức SUM và định dạng</p>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/80 p-4 rounded-xl border border-slate-200">
+        <div class="w-full sm:w-auto flex-1 max-w-md">
+          <label for="export-filename" class="block text-xs font-semibold text-slate-700 mb-1">Tên file kết quả (.xlsx):</label>
+          <input type="text" id="export-filename" value="BẢNG CHẤM CÔNG CẬP NHẬT.xlsx" class="w-full text-xs sm:text-sm px-3 py-2 bg-white border border-slate-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+
+        <button id="btn-export" type="button" class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-3 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-md shadow-emerald-200 transition">
+          <svg id="export-spinner" class="spinner mr-2 hidden" viewBox="0 0 24 24"></svg>
+          <svg id="export-icon" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span>Xác nhận & Điền vào Excel</span>
+        </button>
+      </div>
+
+      <!-- Result Banner & Download Feedback -->
+      <div id="export-result-banner" class="hidden rounded-xl border p-5 transition-all">
+        <div class="flex items-start justify-between">
+          <div class="flex items-start space-x-3">
+            <div id="export-result-icon" class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 font-bold">✓</div>
+            <div>
+              <h3 id="export-result-title" class="text-sm font-bold text-slate-900">Điền dữ liệu Excel thành công!</h3>
+              <p id="export-result-desc" class="text-xs text-slate-600 mt-1 leading-relaxed">Đã cập nhật số giờ công và suất ăn vào file Excel thành công.</p>
+              
+              <!-- Metrics grid -->
+              <div id="export-metrics-grid" class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div class="bg-white/80 p-2 rounded-lg border border-slate-200">
+                  <span class="text-slate-500 block text-[11px]">Bản ghi xử lý:</span>
+                  <span id="res-total-records" class="font-bold text-slate-800 text-sm">0</span>
+                </div>
+                <div class="bg-white/80 p-2 rounded-lg border border-slate-200">
+                  <span class="text-slate-500 block text-[11px]">Nhân viên khớp:</span>
+                  <span id="res-matched-emps" class="font-bold text-slate-800 text-sm">0</span>
+                </div>
+                <div class="bg-white/80 p-2 rounded-lg border border-slate-200">
+                  <span class="text-slate-500 block text-[11px]">Số ô đã ghi:</span>
+                  <span id="res-cells-written" class="font-bold text-emerald-600 text-sm">0</span>
+                </div>
+                <div class="bg-white/80 p-2 rounded-lg border border-slate-200">
+                  <span class="text-slate-500 block text-[11px]">Công thức bảo toàn:</span>
+                  <span class="font-bold text-indigo-600 text-sm">100% SUM</span>
+                </div>
+              </div>
+
+              <!-- Unmatched warnings box -->
+              <div id="export-warnings-box" class="hidden mt-3 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 space-y-1">
+                <div class="font-semibold flex items-center gap-1">
+                  <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                  <span>Cảnh báo cần lưu ý:</span>
+                </div>
+                <ul id="export-warnings-list" class="list-disc list-inside space-y-0.5 text-[11px] text-amber-700"></ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Download Action -->
+          <a id="btn-download-file" href="#" class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-sm transition">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            Tải file Excel ngay
+          </a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Row Edit Modal -->
+  <div id="edit-modal" class="modal-overlay hidden">
+    <div class="modal-content p-6 space-y-5">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200">
+        <h3 class="text-sm font-bold text-slate-900">Chi Tiết & Chỉnh Sửa Bản Ghi Chấm Công</h3>
+        <button id="modal-close" type="button" class="text-slate-400 hover:text-slate-600 transition">✕</button>
+      </div>
+
+      <form id="modal-form" class="space-y-4 text-xs">
+        <input type="hidden" id="modal-rec-id" />
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Họ và tên:</label>
+            <input type="text" id="modal-name" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Ngày chấm công:</label>
+            <input type="text" id="modal-date" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-indigo-500" placeholder="24/10" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Ca làm việc:</label>
+            <select id="modal-shift" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white">
+              <option value="DAY">Ca ngày</option>
+              <option value="NIGHT">Ca đêm</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Suất ăn:</label>
+            <select id="modal-meal" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white">
+              <option value="0">0 (Không ăn)</option>
+              <option value="1">1 (Có ăn ở xưởng)</option>
+              <option value="2">2 (2 suất)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-2">
+          <span class="block font-bold text-slate-700 text-[11px] uppercase tracking-wider">Phân bổ số giờ công</span>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-[11px] text-slate-600">HC Ngày (100%):</label>
+              <input type="number" step="0.5" id="modal-hcn" class="w-full px-2 py-1.5 border rounded outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-600">TC Ngày (150%):</label>
+              <input type="number" step="0.5" id="modal-tcn" class="w-full px-2 py-1.5 border rounded outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-600">HC Đêm (130%):</label>
+              <input type="number" step="0.5" id="modal-hcd" class="w-full px-2 py-1.5 border rounded outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-600">TC Đêm (195%):</label>
+              <input type="number" step="0.5" id="modal-tcd" class="w-full px-2 py-1.5 border rounded outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-600">Ngày CN (200%):</label>
+              <input type="number" step="0.5" id="modal-cn-day" class="w-full px-2 py-1.5 border rounded outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] text-slate-600">Đêm CN (260%):</label>
+              <input type="number" step="0.5" id="modal-cn-night" class="w-full px-2 py-1.5 border rounded outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Tin nhắn gốc:</label>
+          <pre id="modal-raw-text" class="p-2.5 bg-slate-100 rounded border text-[11px] font-mono text-slate-600 whitespace-pre-wrap max-h-24 overflow-y-auto"></pre>
+        </div>
+
+        <div class="flex justify-end space-x-2 pt-2 border-t border-slate-100">
+          <button type="button" id="modal-cancel-btn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-medium">Hủy</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-semibold">Lưu thay đổi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+    <p>Hệ thống tự động chấm công Zalo • Công nghệ bóc tách ngôn ngữ tự nhiên & Bảo toàn công thức Excel</p>
+  </footer>
+
+  <!-- App Client Scripts -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

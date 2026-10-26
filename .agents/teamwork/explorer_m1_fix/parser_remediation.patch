@@ -1,0 +1,273 @@
+--- core/parser.py	2026-10-26 15:10:19
++++ .agents/teamwork/explorer_m1_fix/proposed_core_parser.py	2026-10-26 15:30:27
+@@ -6,7 +6,7 @@
+ import uuid
+ import datetime
+ import unicodedata
+-from typing import List, Dict, Any, Optional, Tuple
++from typing import List, Dict, Any, Optional, Tuple, Set
+ 
+ from models.attendance import WorkHours, AttendanceRecord, ParseSummary, ParseResponse
+ 
+@@ -89,6 +89,37 @@
+     )
+ 
+ 
++def extract_field_types(block: str) -> Set[str]:
++    """
++    Detects which attendance field categories appear in a text block.
++    Used by split_messages to identify multi-line field continuations vs independent records.
++    """
++    found: Set[str] = set()
++    for line in block.split('\n'):
++        line = line.strip()
++        if not line:
++            continue
++        cleaned = re.sub(
++            r'^\[\d{1,2}:\d{2}(?:,\s*\d{1,2}/\d{1,2}(?:/\d{2,4})?)?\]\s*[^:\n]+:\s*',
++            '',
++            line,
++        ).strip()
++        cleaned = re.sub(r'^\d+[\.\)\-]\s*', '', cleaned).strip()
++        if re.match(r'^(?:HỌ\s*(?:VÀ\s*)?TÊN|HO\s*(?:VA\s*)?TEN|TÊN(?!\s*(?:dự|du|xưởng|xuong|công\s*trình|cong\s*trinh|đề\s*án|de\s*an|công\s*ty|cong\s*ty))|TEN(?!\s*(?:du|xuong|cong\s*trinh|de\s*an|cong\s*ty)))\s*[:：\-\.\s]', cleaned, re.I):
++            found.add('name')
++        elif re.match(r'^(?:NGÀY|NGAY|DATE)\s*[:：\-\.\s]', cleaned, re.I):
++            found.add('date')
++        elif re.match(r'^(?:CA\s*(?:LÀM\s*VIỆC|LAM\s*VIEC)?|SHIFT)\s*[:：\-\.\s]', cleaned, re.I):
++            found.add('shift')
++        elif re.match(r'^(?:(?:TÊN\s*)?(?:DỰ\s*ÁN|DU\s*AN|XƯỞNG|XUONG)|ĐỊA\s*ĐIỂM|DIA\s*DIEM|CÔNG\s*TRÌNH)\s*[:：\-\.\s]', cleaned, re.I):
++            found.add('project')
++        elif re.match(r'^(?:THỜI\s*GIAN(?:\s*LÀM\s*VIỆC)?|THOI\s*GIAN(?:\s*LAM\s*VIEC)?|GIỜ\s*LÀM(?:\s*VIỆC)?|GIO\s*LAM(?:\s*VIEC)?|TIME)\s*[:：\-\.\s]', cleaned, re.I):
++            found.add('hours')
++        elif re.match(r'^(?:(?:CÓ\s*)?ĂN(?:\s*(?:Ở\s*)?XƯỞNG)?(?:\s*K(?:O|HÔNG)?)?|(?:CO\s*)?AN(?:\s*(?:O\s*)?XUONG)?(?:\s*K(?:O|HONG)?)?|SUẤT\s*ĂN|SUAT\s*AN|CƠM\s*(?:Ở\s*)?XƯỞNG|CƠM|COM|ĂN|AN)\s*[:：\-\.\s]', cleaned, re.I):
++            found.add('meal')
++    return found
++
++
+ class AttendanceParser:
+     """
+     Parser for Zalo attendance messages.
+@@ -104,33 +135,62 @@
+         """
+         Segments a multi-message batch text into individual message chunks.
+         Uses header-lookahead on 'HỌ TÊN' / 'HO TEN' and divider fallback.
++        Preserves multi-line messages containing internal blank lines.
+         """
+-        if not text or not text.strip():
++        if not text or not isinstance(text, str) or not text.strip():
+             return []
+ 
+         cleaned_text = text.replace('\r\n', '\n').replace('\r', '\n').strip()
+ 
+         # Regex lookahead on message start (with optional timestamp and list numbering)
++        # Standalone TÊN / TEN excludes project/workshop phrases (TÊN DỰ ÁN, TÊN XƯỞNG)
++        name_token = (
++            r'(?:HỌ\s*(?:VÀ\s*)?TÊN|HO\s*(?:VA\s*)?TEN|'
++            r'TÊN(?!\s*(?:dự\s*án|du\s*an|xưởng|xuong|công\s*trình|cong\s*trinh|đề\s*án|de\s*an|công\s*ty|cong\s*ty))|'
++            r'TEN(?!\s*(?:du\s*an|xuong|cong\s*trinh|de\s*an|cong\s*ty)))'
++        )
+         header_re = (
+             r'(?=(?:^|\n)\s*'
+             r'(?:\[\d{1,2}:\d{2}(?:,\s*\d{1,2}/\d{1,2}(?:/\d{2,4})?)?\]\s*[^:\n]+:\s*)?'
+             r'(?:\d+[\.\)\-]\s*)?'
+-            r'(?:HỌ\s*(?:VÀ\s*)?TÊN|HO\s*(?:VA\s*)?TEN|TÊN|TEN)\s*[:：\-\s])'
++            + name_token +
++            r'\s*[:：\-\s])'
+         )
+ 
+-        parts = [p.strip() for p in re.split(header_re, cleaned_text, flags=re.IGNORECASE) if p.strip()]
++        has_headers = bool(re.search(header_re, cleaned_text, flags=re.IGNORECASE))
+ 
+-        if len(parts) > 1:
++        if has_headers:
++            parts = [p.strip() for p in re.split(header_re, cleaned_text, flags=re.IGNORECASE) if p.strip()]
+             final_chunks: List[str] = []
+             for part in parts:
+-                # Sub-split on double newlines if a chunk contains disconnected blocks
+                 sub_blocks = [b.strip() for b in re.split(r'\n\s*\n+', part) if b.strip()]
+-                if len(sub_blocks) > 1:
+-                    final_chunks.append(sub_blocks[0])
+-                    for sb in sub_blocks[1:]:
+-                        final_chunks.append(sb)
+-                else:
+-                    final_chunks.append(part)
++                if not sub_blocks:
++                    continue
++
++                current_chunk = sub_blocks[0]
++                current_fields = extract_field_types(sub_blocks[0])
++
++                for sb in sub_blocks[1:]:
++                    if re.match(r'^(?:-{3,}|={3,}|_{3,}|\*{3,})$', sb.strip()):
++                        if current_chunk:
++                            final_chunks.append(current_chunk)
++                        current_chunk = ""
++                        current_fields = set()
++                        continue
++
++                    sb_fields = extract_field_types(sb)
++                    # If sb has valid fields and none overlap with current_fields, it is a continuation of the same message
++                    if sb_fields and not (sb_fields & current_fields):
++                        current_chunk = current_chunk + "\n" + sb
++                        current_fields.update(sb_fields)
++                    else:
++                        if current_chunk:
++                            final_chunks.append(current_chunk)
++                        current_chunk = sb
++                        current_fields = sb_fields
++
++                if current_chunk:
++                    final_chunks.append(current_chunk)
+             return final_chunks
+ 
+         # Fallback to double newline or markdown horizontal dividers
+@@ -146,14 +206,36 @@
+         Parses a single message into an AttendanceRecord model.
+         Never raises exceptions; captures errors and warnings in record.messages.
+         """
++        # Non-string or empty input guard
++        if not raw_message or not isinstance(raw_message, str) or not raw_message.strip():
++            return AttendanceRecord(
++                id=str(uuid.uuid4()),
++                employee_name="",
++                normalized_name="",
++                date_str="",
++                resolved_date="",
++                day_number=0,
++                is_sunday=False,
++                shift_type="DAY",
++                project=self.default_project,
++                time_window="",
++                hours=WorkHours(),
++                meal_count=0,
++                status="ERROR",
++                messages=["Tin nhắn rỗng hoặc không hợp lệ"],
++                raw_text=str(raw_message or ""),
++            )
++
+         warnings: List[str] = []
+         errors: List[str] = []
+ 
+         field_prefixes = (
+-            r'(?:HỌ\s*(?:VÀ\s*)?TÊN|HO\s*(?:VA\s*)?TEN|TÊN|TEN|'
++            r'(?:HỌ\s*(?:VÀ\s*)?TÊN|HO\s*(?:VA\s*)?TEN|'
++            r'TÊN(?!\s*(?:dự\s*án|du\s*an|xưởng|xuong|công\s*trình|cong\s*trinh|đề\s*án|de\s*an|công\s*ty|cong\s*ty))|'
++            r'TEN(?!\s*(?:du\s*an|xuong|cong\s*trinh|de\s*an|cong\s*ty))|'
+             r'NGÀY|NGAY|DATE|'
+             r'CA\s*(?:LÀM\s*VIỆC|LAM\s*VIEC)?|SHIFT|'
+-            r'DỰ\s*ÁN|DU\s*AN|XƯỞNG|XUONG|ĐỊA\s*ĐIỂM|DIA\s*DIEM|CÔNG\s*TRÌNH|'
++            r'(?:TÊN\s*)?(?:DỰ\s*ÁN|DU\s*AN|XƯỞNG|XUONG)|ĐỊA\s*ĐIỂM|DIA\s*DIEM|CÔNG\s*TRÌNH|'
+             r'THỜI\s*GIAN(?:\s*LÀM\s*VIỆC)?|THOI\s*GIAN(?:\s*LAM\s*VIEC)?|GIỜ\s*LÀM(?:\s*VIỆC)?|GIO\s*LAM(?:\s*VIEC)?|TIME|'
+             r'(?:CÓ\s*)?ĂN(?:\s*(?:Ở\s*)?XƯỞNG)?(?:\s*K(?:O|HÔNG)?)?|(?:CO\s*)?AN(?:\s*(?:O\s*)?XUONG)?(?:\s*K(?:O|HONG)?)?|'
+             r'SUẤT\s*ĂN|SUAT\s*AN|CƠM\s*(?:Ở\s*)?XƯỞNG|CƠM|COM|ĂN|AN)'
+@@ -180,7 +262,9 @@
+ 
+             # 1. Name
+             m_name = re.match(
+-                r'^(?:HỌ\s*(?:VÀ\s*)?TÊN|HO\s*(?:VA\s*)?TEN|TÊN|TEN)\s*[:：\-\.\s]\s*(.*)$',
++                r'^(?:HỌ\s*(?:VÀ\s*)?TÊN|HO\s*(?:VA\s*)?TEN|'
++                r'TÊN(?!\s*(?:dự\s*án|du\s*an|xưởng|xuong|công\s*trình|cong\s*trinh|đề\s*án|de\s*an|công\s*ty|cong\s*ty))|'
++                r'TEN(?!\s*(?:du\s*an|xuong|cong\s*trinh|de\s*an|cong\s*ty)))\s*[:：\-\.\s]\s*(.*)$',
+                 cleaned,
+                 re.IGNORECASE,
+             )
+@@ -210,7 +294,7 @@
+ 
+             # 4. Project
+             m_proj = re.match(
+-                r'^(?:DỰ\s*ÁN|DU\s*AN|XƯỞNG|XUONG|ĐỊA\s*ĐIỂM|DIA\s*DIEM|CÔNG\s*TRÌNH)\s*[:：\-\.\s]\s*(.*)$',
++                r'^(?:(?:TÊN\s*)?(?:DỰ\s*ÁN|DU\s*AN|XƯỞNG|XUONG)|ĐỊA\s*ĐIỂM|DIA\s*DIEM|CÔNG\s*TRÌNH)\s*[:：\-\.\s]\s*(.*)$',
+                 cleaned,
+                 re.IGNORECASE,
+             )
+@@ -309,9 +393,15 @@
+         shift_code: Optional[str] = None
+         if raw_shift:
+             s_lower = raw_shift.lower()
+-            if any(k in s_lower for k in ['ngày', 'ngay', 'sáng', 'sang', 'day', 'ca 1']):
++            has_day = any(k in s_lower for k in ['ngày', 'ngay', 'sáng', 'sang', 'day', 'ca 1'])
++            has_night = any(k in s_lower for k in ['đêm', 'dem', 'tối', 'toi', 'night', 'ca 2', 'ca 3'])
++
++            if has_day and has_night:
+                 shift_code = 'DAY'
+-            elif any(k in s_lower for k in ['đêm', 'dem', 'tối', 'toi', 'night', 'ca 2', 'ca 3']):
++                warnings.append(f'Ca làm việc không rõ ràng (chứa cả ngày và đêm): "{raw_shift}", mặc định Ca ngày')
++            elif has_day:
++                shift_code = 'DAY'
++            elif has_night:
+                 shift_code = 'NIGHT'
+             else:
+                 warnings.append(f'Không nhận diện được ca: "{raw_shift}"')
+@@ -330,6 +420,11 @@
+         if not raw_hours:
+             errors.append('Thiếu trường Thời gian làm việc')
+         else:
++            # Check for negative numbers / unary minus
++            has_negative = bool(re.search(r'(?:^|[\(\[\{]|\b(?:to|đến|den|tới|toi)\b|[-–~])\s*-\s*\d', raw_hours, re.IGNORECASE))
++            if has_negative:
++                errors.append(f'Thời gian làm việc không hợp lệ (số âm): "{raw_hours}"')
++
+             # 1. Bracketed hours take highest precedence: ( 8H), (11H)
+             m_br = re.search(r'\(\s*(\d+(?:[\.,]\d+)?)\s*(?:h|tiếng|g|giờ)?\s*\)', raw_hours, re.IGNORECASE)
+             br_hours = float(m_br.group(1).replace(',', '.')) if m_br else None
+@@ -341,13 +436,17 @@
+                 re.IGNORECASE,
+             )
+ 
+-            if m_rng:
++            if m_rng and not has_negative:
+                 sh = int(m_rng.group(1))
+                 sm = int(m_rng.group(2) or 0)
+                 eh = int(m_rng.group(3))
+                 em = int(m_rng.group(4) or 0)
+                 start_h = sh
+ 
++                # Clock hour bounds check: valid hours are 0..24
++                if sh > 24 or eh > 24 or (sh == 24 and sm > 0) or (eh == 24 and em > 0) or sm >= 60 or em >= 60:
++                    errors.append(f'Khung giờ làm việc không hợp lệ trên đồng hồ 24h: "{raw_hours}"')
++
+                 # Infer shift from start hour if shift wasn't explicitly stated
+                 if not shift_code:
+                     if sh >= 18 or sh <= 4:
+@@ -357,6 +456,10 @@
+                         shift_code = 'DAY'
+                         warnings.append('Tự động nhận diện Ca ngày dựa vào giờ bắt đầu')
+ 
++                # Warning for inverted daytime shift without clarifying bracket
++                if eh < sh and shift_code == 'DAY' and br_hours is None:
++                    warnings.append('Thời gian bắt đầu lớn hơn kết thúc đối với Ca ngày')
++
+                 # Calculate elapsed time
+                 if eh >= sh:
+                     elapsed = (eh - sh) + (em - sm) / 60.0
+@@ -374,7 +477,7 @@
+                         total_hours = elapsed - 1.0
+                     else:
+                         total_hours = elapsed
+-            else:
++            elif not has_negative:
+                 # Standalone hours: 8H, 11 tiếng
+                 m_single = re.search(r'(\d+(?:[\.,]\d+)?)\s*(?:h|tiếng|g|giờ)', raw_hours, re.IGNORECASE)
+                 if m_single:
+@@ -384,7 +487,7 @@
+ 
+             # Separate overtime addition check: + TC 3h
+             m_ot = re.search(r'(?:\+|\btăng\s*ca\b|\btc\b)\s*(\d+(?:[\.,]\d+)?)\s*(?:h|tiếng)?', raw_hours, re.IGNORECASE)
+-            if m_ot and not m_br:
++            if m_ot and not m_br and not has_negative:
+                 ot_hours = float(m_ot.group(1).replace(',', '.'))
+                 total_hours += ot_hours
+ 
+@@ -419,7 +522,11 @@
+             else:
+                 m_dig = re.match(r'^(\d+)', m_clean)
+                 if m_dig:
+-                    meal_count = int(m_dig.group(1))
++                    # Truncate digits to at most 4 digits to prevent integer conversion limit crashes (CVE-2020-10735)
++                    digit_str = m_dig.group(1)[:4]
++                    meal_count = int(digit_str)
++                    if meal_count > 2 or len(m_dig.group(1)) > 2:
++                        warnings.append(f'Số suất ăn bất thường ({m_dig.group(1)[:20]}), vui lòng kiểm tra lại')
+                 else:
+                     meal_count = 0
+                     warnings.append(f'Giá trị suất ăn không rõ ràng ("{raw_meal}"), mặc định 0')
