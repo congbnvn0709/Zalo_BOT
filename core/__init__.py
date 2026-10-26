@@ -1,5 +1,5 @@
 """
-Core package for Zalo Attendance System.
+Core package for Zalo Attendance System checkin.
 """
 from core.parser import (
     AttendanceParser,
